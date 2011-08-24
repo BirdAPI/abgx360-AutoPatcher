@@ -96,8 +96,25 @@ def stealth_patch_ssv2(iso, ss, dmi):
     write_to_file(output, logname)
     return logname
 
-def was_patch_successful(patch_html_log):    
-   return True
+def was_patch_successful(patch_html_log):
+    ss_success = False
+    dmi_success = False
+    html = open(patch_html_log, "r").read()
+    soup = BeautifulSoup(html)
+    greens = soup.findAll(attrs = { "class" : "green" })
+    for green in greens:
+        msg = green.text.strip()
+        if msg == "Patching SS was successful":
+            print "Patching SS was successful"
+            ss_success = True
+            if dmi_success:
+                return (True, True, True)
+        elif msg == "Patching DMI was successful":
+            print "Patching DMI was successful"
+            dmi_success = True
+            if ss_success:
+                return (True, True, True)
+    return (ss_success and dmi_success, ss_success, dmi_success)
    
 def is_stealth_verified(verify_html_log): 
     return True
