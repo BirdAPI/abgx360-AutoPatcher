@@ -28,22 +28,6 @@ def search_by_xex(iso):
         return get_game_from_xex(xex)
     else:
         return (None, None)
-        
-def get_top_search_result(game_name):
-    url = "http://abgx360.net/verified.php?f=name&q=%s" % (game_name.replace(" ", "+"))
-    try:
-        html = urllib2.urlopen(url).read()
-        soup = BeautifulSoup(html)
-        even = soup.find(attrs = { "class" : "even" })
-        tds = even.findAll("td")
-        game = tds[1].text
-        last_td = tds[len(tds) - 1]
-        a = last_td.find('a')
-        href = a["href"]
-        link = "http://abgx360.net" + href
-        return (game, link)
-    except: 
-        return (None, None)
 
 def get_first_ssv2(ss_link):
     try:
@@ -79,28 +63,7 @@ def ensure_dir_exists(dir):
 def get_xex_game_patches(iso):
     (xex, link) = search_by_xex(iso)
     if link is not None:
-        print link
-        (ss, dmi) = get_first_ssv2(link)
-        if ss is not None and dmi is not None:
-            print "SS: " + ss
-            print "DMI: " + dmi
-            patch_path = os.path.dirname(iso) + "/SSv2"
-            ss_filename = download_file(ss, patch_path)
-            print "Downloaded: " + ss_filename
-            dmi_filename = download_file(dmi, patch_path)
-            print "Downloaded: " + dmi_filename
-            return (ss_filename, dmi_filename)
-        else:
-            print "No SSv2 Patches Found!"
-            return (None, None)
-    else:
-        print "No Results: " + search
-        return (None, None)        
-        
-def get_first_game_patches(search, iso):
-    (game, link) = get_top_search_result(search)
-    if game is not None:
-        print game + ": " + link
+        print "Verified: " + link
         (ss, dmi) = get_first_ssv2(link)
         if ss is not None and dmi is not None:
             print "SS: " + ss
@@ -230,7 +193,7 @@ def main():
         else:
             "ERROR: abgx360.exe could not be found on your system."
     else:
-        print 'Usage: python abgx360.py "Game Name" "Game.iso"'
+        print 'Usage: python abgx360.py "Game.iso"'
     
 if __name__ == "__main__":
     main()
