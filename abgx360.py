@@ -53,7 +53,7 @@ def ensure_dir_exists(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
 
-def get_first_game_patches(search):
+def get_first_game_patches(search, iso):
     (game, link) = get_top_search_result(search)
     if game is not None:
         print game + ": " + link
@@ -61,7 +61,7 @@ def get_first_game_patches(search):
         if ss is not None and dmi is not None:
             print "SS: " + ss
             print "DMI: " + dmi
-            patch_path = "C:/Dirt 3/Patches"
+            patch_path = os.path.dirname(iso) + "/SSv2"
             ss_filename = download_file(ss, patch_path)
             print "Downloaded: " + ss_filename
             dmi_filename = download_file(dmi, patch_path)
@@ -156,9 +156,10 @@ def write_to_file(text, filename):
 def main():
     if len(sys.argv) == 3:
         print "64 bit" if is_64bit() else "32 bit"
+        search = sys.argv[1]
         iso = sys.argv[2]
         if os.path.exists(iso):
-            (ss_filename, dmi_filename) = get_first_game_patches(sys.argv[1])
+            (ss_filename, dmi_filename) = get_first_game_patches(search, iso)
             if ss_filename is not None and dmi_filename is not None:
                 print "Patching: %s to SSv2..." % iso
                 patch_html_log = stealth_patch_ssv2(iso, ss_filename, dmi_filename)
