@@ -8,6 +8,27 @@ import sys
 import re
 import os
 
+def get_xex_crc(iso):
+    exe = get_abgx360_exe()
+    args = '-rg --noverify -- "%s"' % (iso)
+    output = os.popen(exe + " " + args).read()
+    match = re.search("XEX CRC = (?P<xex>[^  \n]+)", output)
+    if match:
+        return match.group("xex").strip()
+    else:
+        return None
+
+def get_game_from_xex(xex):
+    return (xex, "http://abgx360.net/verified.php?f=pressings&q=" + xex)
+        
+def search_by_xex(iso):
+    xex = get_xex_crc(iso)
+    if xex:
+        print "Found XEX CRC: " + xex
+        return get_game_from_xex(xex)
+    else:
+        return (None, None)
+        
 def get_top_search_result(game_name):
     url = "http://abgx360.net/verified.php?f=name&q=%s" % (game_name.replace(" ", "+"))
     try:
@@ -55,6 +76,27 @@ def ensure_dir_exists(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
 
+def get_xex_game_patches(iso):
+    (xex, link) = search_by_xex(iso)
+    if link is not None:
+        print link
+        (ss, dmi) = get_first_ssv2(link)
+        if ss is not None and dmi is not None:
+            print "SS: " + ss
+            print "DMI: " + dmi
+            patch_path = os.path.dirname(iso) + "/SSv2"
+            ss_filename = download_file(ss, patch_path)
+            print "Downloaded: " + ss_filename
+            dmi_filename = download_file(dmi, patch_path)
+            print "Downloaded: " + dmi_filename
+            return (ss_filename, dmi_filename)
+        else:
+            print "No SSv2 Patches Found!"
+            return (None, None)
+    else:
+        print "No Results: " + search
+        return (None, None)        
+        
 def get_first_game_patches(search, iso):
     (game, link) = get_top_search_result(search)
     if game is not None:
@@ -155,9 +197,9 @@ def write_to_file(text, filename):
     localFile.write(text)
     localFile.close()
 
-def automate_search(search, iso):
+def automate_search(iso):
     if os.path.exists(iso):
-        (ss_filename, dmi_filename) = get_first_game_patches(search, iso)
+        (ss_filename, dmi_filename) = get_xex_game_patches(iso)
         if ss_filename is not None and dmi_filename is not None:
             print "Patching: %s to SSv2..." % iso
             patch_html_log = stealth_patch_ssv2(iso, ss_filename, dmi_filename)
@@ -179,13 +221,12 @@ def automate_search(search, iso):
         print "ISO file does not exist!"
     
 def main():
-    if len(sys.argv) == 3:
+    if len(sys.argv) == 2:
         exe = get_abgx360_exe()
         print "%s bit - %s" % ("64" if is_64bit() else "32", exe)
         if os.path.exists(exe):
-            search = sys.argv[1]
-            iso = sys.argv[2]
-            automate_search(search, iso)
+            iso = sys.argv[1]
+            automate_search(iso)
         else:
             "ERROR: abgx360.exe could not be found on your system."
     else:
