@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from BeautifulSoup import BeautifulSoup
 import urllib
 import urllib2
