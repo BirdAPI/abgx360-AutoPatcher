@@ -27,6 +27,7 @@ def search_by_xex(iso):
         print "Found XEX CRC: " + xex
         return get_game_from_xex(xex)
     else:
+        print "ERROR: No XEX CRC found for iso!"
         return (None, None)
 
 def get_first_ssv2(ss_link):
@@ -68,18 +69,18 @@ def get_xex_game_patches(iso):
         if ss is not None and dmi is not None:
             print "SS: " + ss
             print "DMI: " + dmi
-            patch_path = os.path.dirname(iso) + "/SSv2"
+            patch_path = os.path.dirname(iso) + "/" + xex + "_SSv2"
             ss_filename = download_file(ss, patch_path)
             print "Downloaded: " + ss_filename
             dmi_filename = download_file(dmi, patch_path)
             print "Downloaded: " + dmi_filename
-            return (ss_filename, dmi_filename)
+            return (xex, ss_filename, dmi_filename)
         else:
             print "No SSv2 Patches Found!"
-            return (None, None)
+            return (None, None, None)
     else:
         print "No Results: " + search
-        return (None, None)
+        return (None, None, None)
 
 def get_abgx360_exe():
     return "C:/Windows/SysWOW64/abgx360.exe" if is_64bit() else "C:/Windows/System32/abgx360.exe"
@@ -87,19 +88,19 @@ def get_abgx360_exe():
 def is_64bit():
     return platform.architecture()[0] == "64bit"
 
-def verify_stealth(iso):
+def verify_stealth(iso, xex):
     exe = get_abgx360_exe()
     args = '-vchi --aa --ach -- "%s"' % iso
     output = os.popen(exe + " " + args).read()
-    logname = os.path.dirname(iso) + "/abgx360_verify.html"
+    logname = os.path.dirname(iso) + "/" + xex + "_verify.html"
     write_to_file(output, logname)
     return logname
     
-def stealth_patch_ssv2(iso, ss, dmi):
+def stealth_patch_ssv2(iso, ss, dmi, xex):
     exe = get_abgx360_exe()
     args = '-vhi --noverify --patchitanyway --p-dmi "%s" --p-ss "%s" -- "%s"' % (dmi, ss, iso)
     output = os.popen(exe + " " + args).read()
-    logname = os.path.dirname(iso) + "/abgx360_patch.html"
+    logname = os.path.dirname(iso) + "/" + xex + "_patch.html"
     write_to_file(output, logname)
     return logname
 
@@ -162,16 +163,16 @@ def write_to_file(text, filename):
 
 def automate_search(iso):
     if os.path.exists(iso):
-        (ss_filename, dmi_filename) = get_xex_game_patches(iso)
+        (xex, ss_filename, dmi_filename) = get_xex_game_patches(iso)
         if ss_filename is not None and dmi_filename is not None:
             print "Patching: %s to SSv2..." % iso
-            patch_html_log = stealth_patch_ssv2(iso, ss_filename, dmi_filename)
+            patch_html_log = stealth_patch_ssv2(iso, ss_filename, dmi_filename, xex)
             print "Done patching to SSv2."
             patch_success = was_patch_successful(patch_html_log)
             if patch_success:
                 print "Patching was successful!"
                 print "Verifying: %s..." % iso
-                verify_html_log = verify_stealth(iso)
+                verify_html_log = verify_stealth(iso, xex)
                 print "Done verifying iso."
                 stealth_success = is_stealth_verified(verify_html_log, True)
                 if stealth_success:
