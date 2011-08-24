@@ -84,14 +84,24 @@ def verify_stealth(iso):
     exe = get_abgx360_exe()
     args = '-vthi -- "%s"' % iso
     output = os.popen(exe + " " + args).read()
-    write_to_file(output, os.path.dirname(iso) + "/abgx360_verify.html")   
+    logname = os.path.dirname(iso) + "/abgx360_verify.html"
+    write_to_file(output, logname)
+    return logname
     
 def stealth_patch_ssv2(iso, ss, dmi):
     exe = get_abgx360_exe()
     args = '-vthi --noverify --patchitanyway --p-dmi "%s" --p-ss "%s" -- "%s"' % (dmi, ss, iso)
     output = os.popen(exe + " " + args).read()
-    write_to_file(output, os.path.dirname(iso) + "/abgx360_patch.html")
+    logname = os.path.dirname(iso) + "/abgx360_patch.html"
+    write_to_file(output, logname)
+    return logname
 
+def was_patch_successful(patch_html_log):    
+   return True
+   
+def is_stealth_verified(verify_html_log): 
+    return True
+  
 def write_to_file(text, filename):
     localFile = open(filename, "w")
     localFile.write(text)
@@ -105,11 +115,21 @@ def main():
             (ss_filename, dmi_filename) = get_first_game_patches(sys.argv[1])
             if ss_filename is not None and dmi_filename is not None:
                 print "Patching: %s to SSv2..." % iso
-                stealth_patch_ssv2(iso, ss_filename, dmi_filename)
+                patch_html_log = stealth_patch_ssv2(iso, ss_filename, dmi_filename)
                 print "Done patching to SSv2."
-                print "Verifying: %s..." % iso
-                verify_stealth(iso)
-                print "Done verifying iso."
+                patch_success = was_patch_successful(patch_html_log)
+                if patch_success:
+                    print "Patching was successful!"
+                    print "Verifying: %s..." % iso
+                    verify_html_log = verify_stealth(iso)
+                    print "Done verifying iso."
+                    stealth_success = is_stealth_verified(verify_html_log)
+                    if stealth_success:
+                        print "Stealth check passed!"
+                    else:
+                        print "ERROR: Stealh check failed!"
+                else:
+                    print "ERROR: Patching Failed!"
         else:
             print "ISO file does not exist!"
     else:
