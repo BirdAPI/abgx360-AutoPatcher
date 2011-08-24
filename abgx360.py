@@ -152,33 +152,40 @@ def write_to_file(text, filename):
     localFile = open(filename, "w")
     localFile.write(text)
     localFile.close()
+
+def automate_search(search, iso):
+    if os.path.exists(iso):
+        (ss_filename, dmi_filename) = get_first_game_patches(search, iso)
+        if ss_filename is not None and dmi_filename is not None:
+            print "Patching: %s to SSv2..." % iso
+            patch_html_log = stealth_patch_ssv2(iso, ss_filename, dmi_filename)
+            print "Done patching to SSv2."
+            patch_success = was_patch_successful(patch_html_log)
+            if patch_success:
+                print "Patching was successful!"
+                print "Verifying: %s..." % iso
+                verify_html_log = verify_stealth(iso)
+                print "Done verifying iso."
+                stealth_success = is_stealth_verified(verify_html_log, True)
+                if stealth_success:
+                    print "Stealth check passed!"
+                else:
+                    print "ERROR: Stealh check failed!"
+            else:
+                print "ERROR: Patching Failed!"
+    else:
+        print "ISO file does not exist!"
     
 def main():
     if len(sys.argv) == 3:
-        print "64 bit" if is_64bit() else "32 bit"
-        search = sys.argv[1]
-        iso = sys.argv[2]
-        if os.path.exists(iso):
-            (ss_filename, dmi_filename) = get_first_game_patches(search, iso)
-            if ss_filename is not None and dmi_filename is not None:
-                print "Patching: %s to SSv2..." % iso
-                patch_html_log = stealth_patch_ssv2(iso, ss_filename, dmi_filename)
-                print "Done patching to SSv2."
-                patch_success = was_patch_successful(patch_html_log)
-                if patch_success:
-                    print "Patching was successful!"
-                    print "Verifying: %s..." % iso
-                    verify_html_log = verify_stealth(iso)
-                    print "Done verifying iso."
-                    stealth_success = is_stealth_verified(verify_html_log, True)
-                    if stealth_success:
-                        print "Stealth check passed!"
-                    else:
-                        print "ERROR: Stealh check failed!"
-                else:
-                    print "ERROR: Patching Failed!"
+        exe = get_abgx360_exe()
+        print "%s bit - %s" % ("64" if is_64bit() else "32", exe)
+        if os.path.exists(exe):
+            search = sys.argv[1]
+            iso = sys.argv[2]
+            automate_search(search, iso)
         else:
-            print "ISO file does not exist!"
+            "ERROR: abgx360.exe could not be found on your system."
     else:
         print 'Usage: python abgx360.py "Game Name" "Game.iso"'
     
