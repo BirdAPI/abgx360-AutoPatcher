@@ -63,7 +63,9 @@ def get_first_game_patches(search):
             print "DMI: " + dmi
             patch_path = "C:/Dirt 3/Patches"
             ss_filename = download_file(ss, patch_path)
+            print "Downloaded: " + ss_filename
             dmi_filename = download_file(dmi, patch_path)
+            print "Downloaded: " + dmi_filename
             return (ss_filename, dmi_filename)
         else:
             print "No SSv2 Patches Found!"
@@ -97,18 +99,21 @@ def write_to_file(text, filename):
     
 def main():
     if len(sys.argv) == 3:
+        print "64 bit" if is_64bit() else "32 bit"
         iso = sys.argv[2]
         if os.path.exists(iso):
             (ss_filename, dmi_filename) = get_first_game_patches(sys.argv[1])
             if ss_filename is not None and dmi_filename is not None:
-                print "Patching %s to SSv2..." % iso
+                print "Patching: %s to SSv2..." % iso
                 stealth_patch_ssv2(iso, ss_filename, dmi_filename)
-                print "Verifying %s..." % iso
+                print "Done patching to SSv2."
+                print "Verifying: %s..." % iso
                 verify_stealth(iso)
+                print "Done verifying iso."
         else:
             print "ISO file does not exist!"
     else:
-        print "Usage: abgx360.py game_name iso_file"
+        print 'Usage: python abgx360.py "Game Name" "Game.iso"'
     
 if __name__ == "__main__":
     main()
