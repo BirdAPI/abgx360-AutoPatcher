@@ -82,7 +82,7 @@ def is_64bit():
 
 def verify_stealth(iso):
     exe = get_abgx360_exe()
-    args = '-vthi -- "%s"' % iso
+    args = '-vchi --aa --ach -- "%s"' % iso
     output = os.popen(exe + " " + args).read()
     logname = os.path.dirname(iso) + "/abgx360_verify.html"
     write_to_file(output, logname)
@@ -90,7 +90,7 @@ def verify_stealth(iso):
     
 def stealth_patch_ssv2(iso, ss, dmi):
     exe = get_abgx360_exe()
-    args = '-vthi --noverify --patchitanyway --p-dmi "%s" --p-ss "%s" -- "%s"' % (dmi, ss, iso)
+    args = '-vhi --noverify --patchitanyway --p-dmi "%s" --p-ss "%s" -- "%s"' % (dmi, ss, iso)
     output = os.popen(exe + " " + args).read()
     logname = os.path.dirname(iso) + "/abgx360_patch.html"
     write_to_file(output, logname)
@@ -116,12 +116,20 @@ def was_patch_successful(patch_html_log):
                 return (True, True, True)
     return (False, ss_success, dmi_success)
    
-def is_stealth_verified(verify_html_log):
+def is_stealth_verified(verify_html_log, verify_ss2):
+    ss2 = False
     crc_match = False
     verification = False
     splitvid = False
     html = open(verify_html_log, "r").read()
     soup = BeautifulSoup(html)
+    normals = soup.findAll(attrs = { "class" : "normal" })
+    for normal in normals:
+        msg = normal.text.strip()
+        if msg.find("SS Version: 2 (trusted)") != -1:
+            print "SS Version: 2 (trusted)"
+            ss2 = True
+            break
     greens = soup.findAll(attrs = { "class" : "green" })
     for green in greens:
         msg = green.text.strip()
@@ -134,7 +142,7 @@ def is_stealth_verified(verify_html_log):
         elif msg == "SplitVid is valid":
             print "SplitVid is valid"
             splitvid = True
-    return (crc_match and verification and splitvid, crc_match, verification, splitvid)
+    return ((ss2 or not verify_ss2) and crc_match and verification and splitvid, ss2, crc_match, verification, splitvid)
   
 def is_ap25_game(verify_html_log):
     # TODO
@@ -161,7 +169,7 @@ def main():
                     print "Verifying: %s..." % iso
                     verify_html_log = verify_stealth(iso)
                     print "Done verifying iso."
-                    stealth_success = is_stealth_verified(verify_html_log)
+                    stealth_success = is_stealth_verified(verify_html_log, True)
                     if stealth_success:
                         print "Stealth check passed!"
                     else:
