@@ -114,10 +114,31 @@ def was_patch_successful(patch_html_log):
             dmi_success = True
             if ss_success:
                 return (True, True, True)
-    return (ss_success and dmi_success, ss_success, dmi_success)
+    return (False, ss_success, dmi_success)
    
-def is_stealth_verified(verify_html_log): 
-    return True
+def is_stealth_verified(verify_html_log):
+    crc_match = False
+    verification = False
+    splitvid = False
+    html = open(verify_html_log, "r").read()
+    soup = BeautifulSoup(html)
+    greens = soup.findAll(attrs = { "class" : "green" })
+    for green in greens:
+        msg = green.text.strip()
+        if msg == "All CRCs match":
+            print "All CRCs match"
+            crc_match = True
+        elif msg == "Verification was successful!":
+            print "Verification was successful!"
+            verification = True
+        elif msg == "SplitVid is valid":
+            print "SplitVid is valid"
+            splitvid = True
+    return (crc_match and verification and splitvid, crc_match, verification, splitvid)
+  
+def is_ap25_game(verify_html_log):
+    # TODO
+    return False
   
 def write_to_file(text, filename):
     localFile = open(filename, "w")
