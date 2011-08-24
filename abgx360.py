@@ -1,5 +1,7 @@
 from BeautifulSoup import BeautifulSoup
+import urllib
 import urllib2
+import platform
 import sys
 import re
 import os
@@ -35,15 +37,13 @@ def get_first_ssv2(ss_link):
         return (None, None)
 
 def download_file(link, dest_dir):
-    u = urllib2.urlopen(link)
     dest_dir = dest_dir.replace("\\", "/")
     if dest_dir != "" and dest_dir[len(dest_dir) - 1] != "/":
         dest_dir = dest_dir + "/"
     ensure_dir_exists(dest_dir)
     destname = dest_dir + get_filename_from_url(link)
-    localFile = open(destname, "w")
-    localFile.write(u.read())
-    localFile.close()
+    urllib.urlretrieve(link, destname)
+    return destname
 
 def get_filename_from_url(url):
     tokens = url.replace("\\", "/").split("/")
@@ -52,24 +52,63 @@ def get_filename_from_url(url):
 def ensure_dir_exists(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
+
+def get_first_game_patches(search):
+    (game, link) = get_top_search_result(search)
+    if game is not None:
+        print game + ": " + link
+        (ss, dmi) = get_first_ssv2(link)
+        if ss is not None and dmi is not None:
+            print "SS: " + ss
+            print "DMI: " + dmi
+            patch_path = "C:/Dirt 3/Patches"
+            ss_filename = download_file(ss, patch_path)
+            dmi_filename = download_file(dmi, patch_path)
+            return (ss_filename, dmi_filename)
+        else:
+            print "No SSv2 Patches Found!"
+            return (None, None)
+    else:
+        print "No Results: " + search
+        return (None, None)
+
+def get_abgx360_exe():
+    return "C:/Windows/SysWOW64/abgx360.exe" if is_64bit() else "C:/Windows/System32/abgx360.exe"
+        
+def is_64bit():
+    return platform.architecture()[0] == "64bit"
+
+def verify_stealth(iso):
+    exe = get_abgx360_exe()
+    args = '-vthi -- "%s"' % iso
+    output = os.popen(exe + " " + args).read()
+    write_to_file(output, os.path.dirname(iso) + "/abgx360_verify.html")   
+    
+def stealth_patch_ssv2(iso, ss, dmi):
+    exe = get_abgx360_exe()
+    args = '-vthi --noverify --patchitanyway --p-dmi "%s" --p-ss "%s" -- "%s"' % (dmi, ss, iso)
+    output = os.popen(exe + " " + args).read()
+    write_to_file(output, os.path.dirname(iso) + "/abgx360_patch.html")
+
+def write_to_file(text, filename):
+    localFile = open(filename, "w")
+    localFile.write(text)
+    localFile.close()
     
 def main():
-    if len(sys.argv) == 2:
-        (game, link) = get_top_search_result(sys.argv[1])
-        if game is not None:
-            print game + ": " + link
-            (ss, dmi) = get_first_ssv2(link)
-            if ss is not None and dmi is not None:
-                print "SS: " + ss
-                print "DMI: " + dmi
-                download_file(ss, "Patches/" + game)
-                download_file(dmi, "Patches/" + game)
-            else:
-                print "No SSv2 Patches Found!"
+    if len(sys.argv) == 3:
+        iso = sys.argv[2]
+        if os.path.exists(iso):
+            (ss_filename, dmi_filename) = get_first_game_patches(sys.argv[1])
+            if ss_filename is not None and dmi_filename is not None:
+                print "Patching %s to SSv2..." % iso
+                stealth_patch_ssv2(iso, ss_filename, dmi_filename)
+                print "Verifying %s..." % iso
+                verify_stealth(iso)
         else:
-            print "No Results: " + sys.argv[1]
+            print "ISO file does not exist!"
     else:
-        print "Usage: abgx360.py game_name"
+        print "Usage: abgx360.py game_name iso_file"
     
 if __name__ == "__main__":
     main()
