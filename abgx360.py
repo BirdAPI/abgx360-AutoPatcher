@@ -12,7 +12,6 @@ def get_xex_crc(iso):
     exe = get_abgx360_executable()
     args = '-rg --noverify -- "%s"' % iso
     output = os.popen(exe + " " + args).read()
-    print(exe + " " + args)
     match = re.search("XEX CRC = (?P<xex>[^  \n]+)", output)
     if match:
         return match.group("xex").strip()
@@ -30,7 +29,7 @@ def search_by_xex(iso):
         print("Found XEX CRC: " + xex)
         return get_game_from_xex(xex)
     else:
-        print("ERROR: No XEX CRC found for iso!")
+        print("ERROR: No XEX CRC found for ISO!")
         return None, None
 
 
@@ -95,11 +94,15 @@ def get_abgx360_executable():
         return "/usr/bin/abgx360"
     elif sys.platform == "win32":
         # Windows
-        return "C:/Windows/SysWOW64/abgx360.exe" if is_64bit() else "C:/Windows/System32/abgx360.exe"
+        if os_bits() == 64:
+            return "C:/Windows/SysWOW64/abgx360.exe"
+        else:
+            return "C:/Windows/System32/abgx360.exe"
 
 
-def is_64bit():
-    return platform.architecture()[0] == "64bit"
+def os_bits():
+    machine2bits = {'AMD64': 64, 'x86_64': 64, 'i386': 32, 'x86': 32}
+    return machine2bits.get(platform.machine(), None)
 
 
 def verify_stealth(iso, xex):
@@ -208,12 +211,12 @@ def automate_search(iso):
 def main():
     if len(sys.argv) == 2:
         exe = get_abgx360_executable()
-        print("%s bit - %s" % ("64" if is_64bit() else "32", exe))
+        print("%s bit - %s" % (os_bits(), exe))
         if os.path.exists(exe):
             iso = sys.argv[1]
             automate_search(iso)
         else:
-            print('ERROR: abgx360.exe could not be found on your system.')
+            print('ERROR: abgx360 could not be found on your system.')
     else:
         print('Usage: python abgx360.py "Game.iso"')
 
