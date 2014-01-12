@@ -10,7 +10,7 @@ import urllib.request
 
 def get_xex_crc(iso):
     exe = get_abgx360_executable()
-    args = '-rg --noverify -- "%s"' % iso
+    args = '-rgd --noverify -- "%s"' % iso
     output = os.popen(exe + " " + args).read()
     match = re.search("XEX CRC = (?P<xex>[^  \n]+)", output)
     if match:
@@ -101,8 +101,8 @@ def get_abgx360_executable():
 
 
 def os_bits():
-    machine2bits = {'AMD64': 64, 'x86_64': 64, 'i386': 32, 'x86': 32}
-    return machine2bits.get(platform.machine(), None)
+    machine_bits = {'AMD64': 64, 'x86_64': 64, 'i386': 32, 'x86': 32}
+    return machine_bits.get(platform.machine(), None)
 
 
 def verify_stealth(iso, xex):
